@@ -3,6 +3,34 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+
+export async function deleteEvent(eventId: string) {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: old } = await supabase.from('events').select('*').eq('id', eventId).single()
+
+  const { error } = await supabase.from('events').delete().eq('id', eventId)
+
+  if (error) return { error: error.message }
+
+  await supabase.from('audit_trail').insert({
+    user_id: user.id,
+    action: 'delete',
+    module: 'events',
+    target_id: eventId,
+    old_value: old,
+  })
+
+  revalidatePath('/events')
+  revalidatePath('/dashboard')
+  return {}
+}
+
+
+
 export async function getEvents(month?: number, year?: number) {
   const supabase = await createSupabaseServerClient()
 

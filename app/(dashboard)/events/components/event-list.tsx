@@ -4,8 +4,19 @@ import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { MapPin, Clock, Users, Pencil } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { MapPin, Clock, Users, Pencil, Trash2 } from 'lucide-react'
 import { EventForm } from './event-form'
+import { deleteEvent } from '@/app/(dashboard)/events/actions'
 
 type Bod = { id: string; name: string; title: string | null }
 
@@ -31,15 +42,25 @@ type Props = {
 
 export function EventList({ events, bods, userRole, onRefresh }: Props) {
   const [editEvent, setEditEvent] = useState<Event | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const canEdit = userRole === 'cms' || userRole === 'super_admin'
 
-  // Group by date
   const grouped: Record<string, Event[]> = {}
   events.forEach((e) => {
     if (!grouped[e.date]) grouped[e.date] = []
     grouped[e.date].push(e)
   })
+
+  async function handleDelete() {
+    if (!deleteId) return
+    setDeleteLoading(true)
+    await deleteEvent(deleteId)
+    setDeleteId(null)
+    setDeleteLoading(false)
+    onRefresh()
+  }
 
   return (
     <>
@@ -98,19 +119,30 @@ export function EventList({ events, bods, userRole, onRefresh }: Props) {
                       </div>
 
                       {event.notes && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{event.notes}</p>
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {event.notes}
+                        </p>
                       )}
                     </div>
 
                     {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="shrink-0"
-                        onClick={() => setEditEvent(event)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditEvent(event)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(event.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -136,6 +168,28 @@ export function EventList({ events, bods, userRole, onRefresh }: Props) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus event?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Event ini akan dihapus permanen beserta seluruh data terkait.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteLoading}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleteLoading ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
