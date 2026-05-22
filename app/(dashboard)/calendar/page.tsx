@@ -2,7 +2,7 @@ import { getCalendarData } from './actions'
 import { CalendarClient } from './components/calendar-client'
 
 export default async function CalendarPage() {
-  const { events, holidays } = await getCalendarData()
+  const { events, publicHolidays } = await getCalendarData()
 
   return (
     <div className="space-y-4">
@@ -10,7 +10,7 @@ export default async function CalendarPage() {
         <h1 className="text-2xl font-semibold">Calendar</h1>
         <p className="text-muted-foreground mt-1">Tampilan kalender semua event</p>
       </div>
-      <CalendarClient events={events} holidays={holidays} />
+      <CalendarClient events={events} publicHolidays={publicHolidays} />
     </div>
   )
 }
