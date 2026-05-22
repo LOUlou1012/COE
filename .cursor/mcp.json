@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "coe-supabase": {
+      "url": "https://mcp-api-devstreams-coe-staging.digital-lab.ai/sse"
+    }
+  }
+}
